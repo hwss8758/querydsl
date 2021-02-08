@@ -50,6 +50,9 @@ dependencies {
     /**
      * querydsl end
      */
+
+    // 쿼리 로그를 남기기 위해 디펜던시 추가
+    implementation("com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.5.6")
 }
 
 tasks.withType<KotlinCompile> {
