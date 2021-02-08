@@ -6,6 +6,11 @@ plugins {
     kotlin("jvm") version "1.4.21"
     kotlin("plugin.spring") version "1.4.21"
     kotlin("plugin.jpa") version "1.4.21"
+
+    /**
+     * jpa 양방향 무한로프 방지
+     */
+    id("org.jetbrains.kotlin.plugin.allopen") version "1.3.61"
 }
 
 group = "study"
@@ -35,4 +40,13 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+/**
+ * jpa 양방향 무한로프 방지
+ */
+allOpen {
+    annotation("javax.persistence.Entity")
+    annotation("javax.persistence.MappedSuperclass")
+    annotation("javax.persistence.Embeddable")
 }
