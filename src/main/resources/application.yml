@@ -12,6 +12,7 @@ spring:
       hibernate:
 #        show_sql: true # system out쪽에 로그를 찍는다. 운영시에는 사용하지 않는다.
         format_sql: true
+        use_sql_comments: true # JPQL을 확인 할 수 있음
 logging:
   level:
     org.hibernate.SQL: debug # logger쪽에 log를 찍는다.
