@@ -1,7 +1,12 @@
 package study.querydsl
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.querydsl.core.BooleanBuilder
 import com.querydsl.core.Tuple
+import com.querydsl.core.types.ExpressionUtils
+import com.querydsl.core.types.Predicate
+import com.querydsl.core.types.Projections
+import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.core.types.dsl.Expressions
 import com.querydsl.jpa.JPAExpressions
 import com.querydsl.jpa.impl.JPAQueryFactory
@@ -11,6 +16,9 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.util.AssertionErrors.assertEquals
+import study.querydsl.dto.MemberDto
+import study.querydsl.dto.QMemberSubDto
+import study.querydsl.dto.UserDto
 import study.querydsl.entity.Member
 import study.querydsl.entity.QMember
 import study.querydsl.entity.QTeam
@@ -472,5 +480,255 @@ class QuerydslBasicTest {
         val fetchOne = jpaQueryFactory.select(member.username.concat("_").concat(member.age.stringValue()))
                 .from(member)
                 .fetchFirst()
+    }
+
+    @Test
+    fun simpleProjection() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val resultString: MutableList<String> = jpaQueryFactory.select(member.username)
+                .from(member)
+                .fetch()
+
+        for (s in resultString) {
+            println(s)
+        }
+    }
+
+    @Test
+    fun tupleProjection() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val resultTuple: Tuple = jpaQueryFactory.select(member.username, member.age)
+                .from(member)
+                .fetchFirst()
+
+        val member_username = resultTuple.get(member.username)
+        val member_age = resultTuple.get(member.age)
+
+        println("member.username:" + member_username)
+        println("member.age:" + member_age)
+
+    }
+
+    @Test
+    fun findDtoByJPQL() {
+        val resultList = em.createQuery(
+                "select new study.querydsl.dto.MemberDto(m.username, m.age) from Member m",
+                MemberDto::class.java
+        )
+                .resultList
+
+        for (memberDto in resultList) {
+            println(memberDto)
+        }
+    }
+
+    @Test
+    fun findDtoByQuerydslSetter() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val result = jpaQueryFactory.select(Projections.bean(MemberDto::class.java,
+                member.username,
+                member.age))
+                .from(member)
+                .fetch()
+
+        for (memberDto in result) {
+            println(memberDto)
+        }
+    }
+
+    @Test
+    fun findDtoQuerydslFild() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val result = jpaQueryFactory
+                .select(Projections.fields(MemberDto::class.java,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch()
+
+        for (memberDto in result) {
+            println(memberDto)
+        }
+    }
+
+    @Test
+    fun findDtoQuerydslConstructor() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val result = jpaQueryFactory
+                .select(Projections.constructor(MemberDto::class.java,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch()
+
+        for (memberDto in result) {
+            println(memberDto)
+        }
+    }
+
+    @Test
+    fun findDtoQuerydslUserDto() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+        val memberSub = QMember("memberSub")
+
+        val result = jpaQueryFactory
+                .select(
+                        Projections.fields(
+                                UserDto::class.java,
+                                member.username.`as`("name"),
+                                ExpressionUtils.`as`(
+                                        JPAExpressions
+                                                .select(memberSub.age.avg().intValue())
+                                                .from(memberSub),
+                                        "age"
+                                )
+                        )
+                )
+                .from(member)
+                .fetch()
+
+        for (userDto in result) {
+            println(userDto)
+        }
+    }
+
+    @Test
+    fun queryProjection() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val result = jpaQueryFactory
+                .select(QMemberSubDto(member.username, member.age))
+                .from(member)
+                .fetch()
+
+        for (memberSubDto in result) {
+            println(memberSubDto)
+        }
+    }
+
+    @Test
+    fun distinct() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val result = jpaQueryFactory
+                .select(member.username).distinct()
+                .from(member)
+                .fetch()
+
+        for (username in result) {
+            println(username)
+        }
+    }
+
+    @Test
+    fun 동적쿼리_BooleanBuilder() {
+        var usernameParam: String? = "member1"
+        var ageParam: Int? = 10
+
+        val result: MutableList<Member> = searchMember1(usernameParam, ageParam)
+
+        assertThat(result.size).isEqualTo(1)
+
+    }
+
+    private fun searchMember1(usernameParam: String?, ageParam: Int?): MutableList<Member> {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val builder = BooleanBuilder()
+
+        if (usernameParam != null) {
+            builder.and(member.username.eq(usernameParam))
+        }
+
+        if (ageParam != null) {
+            builder.and(member.age.eq(ageParam))
+        }
+
+        return jpaQueryFactory
+                .selectFrom(member)
+                .where(builder)
+                .fetch()
+    }
+
+    @Test
+    fun 동적쿼리_where_param1() {
+        var usernameParam: String? = "member1"
+        var ageParam: Int? = 10
+
+        val result: MutableList<Member> = searchMember2(usernameParam, ageParam)
+
+        assertThat(result.size).isEqualTo(1)
+
+    }
+
+    @Test
+    fun 동적쿼리_where_param2() {
+        var usernameParam: String? = "member1"
+        var ageParam: Int? = 10
+
+        val result: MutableList<Member> = searchMember3(usernameParam, ageParam)
+
+        assertThat(result.size).isEqualTo(1)
+
+    }
+
+    private fun searchMember3(usernameParam: String?, ageParam: Int?): MutableList<Member> {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        return jpaQueryFactory
+                .select(member)
+                .from(member)
+                .where(allEq(usernameParam, ageParam))
+                .fetch()
+    }
+
+    private fun allEq(usernameParam: String?, ageParam: Int?): BooleanExpression? {
+        return if (usernameParam == null && ageParam == null) null
+        else if (usernameParam == null && ageParam != null) ageEq(ageParam)
+        else if (usernameParam != null && ageParam == null) usernameEq(usernameParam)
+        else usernameEq(usernameParam)?.and(ageEq(ageParam))
+    }
+
+    private fun searchMember2(usernameParam: String?, ageParam: Int?): MutableList<Member> {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        return jpaQueryFactory
+                .select(member)
+                .from(member)
+                .where(usernameEq(usernameParam), ageEq(ageParam))
+                .fetch()
+    }
+
+    private fun ageEq(ageParam: Int?): BooleanExpression? {
+
+        val member = QMember.member
+
+        if (ageParam == null) return null
+
+        return member.age.eq(ageParam)
+    }
+
+    private fun usernameEq(usernameParam: String?): BooleanExpression? {
+        val member = QMember.member
+
+        if (usernameParam == null) return null
+
+        return member.username.eq(usernameParam)
     }
 }
