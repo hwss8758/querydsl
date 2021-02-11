@@ -2,6 +2,8 @@ package study.querydsl.controller
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import study.querydsl.dto.MemberSearchCondition
 import study.querydsl.dto.MemberTeamDto
@@ -13,8 +15,12 @@ class MemberController {
     @Autowired
     lateinit var memberQuerydslRepository: MemberQuerydslRepository
 
-    @GetMapping("/v1/members")
-    fun searchMemberV1(condition: MemberSearchCondition?): Result<MutableList<MemberTeamDto>> {
+    @PostMapping("/v1/members")
+    fun searchMemberV1(@RequestBody condition: MemberSearchCondition?): Result<MutableList<MemberTeamDto>> {
+
+        println("------------------------------")
+        println(condition)
+        println("------------------------------")
         return Result(memberQuerydslRepository.searchByWhere(condition))
     }
 
