@@ -18,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.test.util.AssertionErrors.assertEquals
 import study.querydsl.dto.MemberDto
+import study.querydsl.dto.MemberSearchCondition
 import study.querydsl.dto.QMemberSubDto
 import study.querydsl.dto.UserDto
 import study.querydsl.entity.Member
@@ -25,6 +26,7 @@ import study.querydsl.entity.QMember
 import study.querydsl.entity.QTeam
 import study.querydsl.entity.Team
 import study.querydsl.repository.MemberRepository
+import study.querydsl.repository.querydsl.MemberQuerydslRepository
 import javax.persistence.EntityManager
 import javax.persistence.EntityManagerFactory
 import javax.persistence.PersistenceUnit
@@ -42,6 +44,9 @@ class QuerydslBasicTest {
 
     @Autowired
     lateinit var memberRepository: MemberRepository
+
+    @Autowired
+    lateinit var memberQuerydslRepository: MemberQuerydslRepository
 
     @BeforeEach
     fun before() {
@@ -847,5 +852,39 @@ class QuerydslBasicTest {
 
         val findAll = memberRepository.findAll()
         findAll.forEach { println(it) }
+    }
+
+    @Test
+    fun searchByWhereTest() {
+
+        val memberSearchCondition = MemberSearchCondition("member2", "teamA", 15, 35)
+        val searchByWhere = memberQuerydslRepository.searchByWhere(memberSearchCondition)
+
+        println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        for (memberTeamDto in searchByWhere) {
+            println(memberTeamDto.memberId)
+            println(memberTeamDto.username)
+            println(memberTeamDto.age)
+            println(memberTeamDto.teamId)
+            println(memberTeamDto.teamName)
+        }
+        println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    }
+
+    @Test
+    fun searchByBooleanBuilderTest() {
+
+        val memberSearchCondition = MemberSearchCondition("member2", "teamA", 15, 35)
+        val searchByWhere = memberQuerydslRepository.searchByBooleanBuilder(memberSearchCondition)
+
+        println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        for (memberTeamDto in searchByWhere) {
+            println(memberTeamDto.memberId)
+            println(memberTeamDto.username)
+            println(memberTeamDto.age)
+            println(memberTeamDto.teamId)
+            println(memberTeamDto.teamName)
+        }
+        println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     }
 }
