@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.test.util.AssertionErrors.assertEquals
 import study.querydsl.dto.MemberDto
 import study.querydsl.dto.QMemberSubDto
@@ -23,6 +24,7 @@ import study.querydsl.entity.Member
 import study.querydsl.entity.QMember
 import study.querydsl.entity.QTeam
 import study.querydsl.entity.Team
+import study.querydsl.repository.MemberRepository
 import javax.persistence.EntityManager
 import javax.persistence.EntityManagerFactory
 import javax.persistence.PersistenceUnit
@@ -37,6 +39,9 @@ class QuerydslBasicTest {
 
     @Autowired
     lateinit var em: EntityManager
+
+    @Autowired
+    lateinit var memberRepository: MemberRepository
 
     @BeforeEach
     fun before() {
@@ -70,8 +75,8 @@ class QuerydslBasicTest {
     @Test
     fun startJPQL() {
         val findByJPQL = em.createQuery("select m from Member as m where m.username = :username", Member::class.java)
-                .setParameter("username", "member1")
-                .resultList
+            .setParameter("username", "member1")
+            .resultList
 
         assertThat(findByJPQL[0].username).isEqualTo("member1")
     }
@@ -84,9 +89,9 @@ class QuerydslBasicTest {
         val m = QMember.member // 기본 인스턴스 사용
 
         val findMember = queryFactory.select(m)
-                .from(m)
-                .where(m.username.eq("member1"))
-                .fetchOne()
+            .from(m)
+            .where(m.username.eq("member1"))
+            .fetchOne()
 
         assertThat(findMember?.username).isEqualTo("member1")
 
@@ -98,9 +103,11 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val findMember = query.selectFrom(member)
-                .where(member.username.eq("member1")
-                        .and(member.age.eq(10)))
-                .fetchOne()
+            .where(
+                member.username.eq("member1")
+                    .and(member.age.eq(10))
+            )
+            .fetchOne()
 
         assertEquals("멤버 이름이 잘 조회 되었는지 확인", findMember?.username, "member1")
         assertEquals("멤버 나이가 잘 조회 되었는지 확인", findMember?.age, 10)
@@ -113,11 +120,11 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val fetchOne = jpaQueryFactory.selectFrom(member)
-                .where(
-                        member.username.eq("member1"),
-                        member.age.eq(10)
-                )
-                .fetchOne()
+            .where(
+                member.username.eq("member1"),
+                member.age.eq(10)
+            )
+            .fetchOne()
 
         assertEquals("멤버 이름이 잘 조회 되었는지 확인", fetchOne?.username, "member1")
         assertEquals("멤버 나이가 잘 조회 되었는지 확인", fetchOne?.age, 10)
@@ -130,30 +137,30 @@ class QuerydslBasicTest {
 
         // List
         val fetch = jpaQueryFactory.selectFrom(member)
-                .fetch()
+            .fetch()
 
         // 단 건
         val fetchOne = jpaQueryFactory.selectFrom(member)
-                .where(
-                        member.username.eq("member1"),
-                        member.age.eq(10)
-                )
-                .fetchOne()
+            .where(
+                member.username.eq("member1"),
+                member.age.eq(10)
+            )
+            .fetchOne()
 
         // 처음 한 건 조회
         val fetchFirst = jpaQueryFactory.selectFrom(member)
-                .fetchFirst()
+            .fetchFirst()
 
         // 페이징에서 사용
         val fetchResults = jpaQueryFactory.selectFrom(member)
-                .fetchResults()
+            .fetchResults()
 
         println("전체 데이터 건수 : " + fetchResults.total)
         fetchResults.results.forEach { println(objectMapper.writeValueAsString(it)) }
 
         // count 쿼리
         val fetchCount = jpaQueryFactory.selectFrom(member)
-                .fetchCount()
+            .fetchCount()
     }
 
     /**
@@ -173,11 +180,11 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val fetch = jpaQueryFactory.selectFrom(member)
-                .orderBy(
-                        member.age.desc(),
-                        member.username.asc().nullsLast()
-                )
-                .fetch()
+            .orderBy(
+                member.age.desc(),
+                member.username.asc().nullsLast()
+            )
+            .fetch()
 
         val member7 = fetch.get(0)
         val member5 = fetch.get(1)
@@ -197,10 +204,10 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val fetch = jpaQueryFactory.selectFrom(member)
-                .orderBy(member.username.desc())
-                .offset(1)
-                .limit(2)
-                .fetch()
+            .orderBy(member.username.desc())
+            .offset(1)
+            .limit(2)
+            .fetch()
 
         assertThat(fetch.size).isEqualTo(2)
     }
@@ -211,10 +218,10 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val fetchResults = jpaQueryFactory.selectFrom(member)
-                .orderBy(member.username.desc())
-                .offset(1)
-                .limit(2)
-                .fetchResults()
+            .orderBy(member.username.desc())
+            .offset(1)
+            .limit(2)
+            .fetchResults()
 
         assertThat(fetchResults.limit).isEqualTo(2)
         assertThat(fetchResults.offset).isEqualTo(1)
@@ -228,14 +235,14 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val result = jpaQueryFactory.select(
-                member.count(),
-                member.age.sum(),
-                member.age.avg(),
-                member.age.max(),
-                member.age.min()
+            member.count(),
+            member.age.sum(),
+            member.age.avg(),
+            member.age.max(),
+            member.age.min()
         )
-                .from(member)
-                .fetch()
+            .from(member)
+            .fetch()
 
         val tuple: com.querydsl.core.Tuple = result.get(0)
 
@@ -253,10 +260,10 @@ class QuerydslBasicTest {
         val team = QTeam.team
 
         val result = jpaQueryFactory.select(team.name, member.age.avg())
-                .from(member)
-                .join(member.team, team)
-                .groupBy(team.name)
-                .fetch()
+            .from(member)
+            .join(member.team, team)
+            .groupBy(team.name)
+            .fetch()
 
         val teamA: Tuple = result.get(0)
         val teamB: Tuple = result.get(1)
@@ -275,14 +282,14 @@ class QuerydslBasicTest {
         val team = QTeam.team
 
         val fetch = jpaQueryFactory.select(member)
-                .from(member)
-                .join(member.team, team)
-                .where(team.name.eq("teamA"))
-                .fetch()
+            .from(member)
+            .join(member.team, team)
+            .where(team.name.eq("teamA"))
+            .fetch()
 
         assertThat(fetch)
-                .extracting("username")
-                .containsExactly("member1", "member2")
+            .extracting("username")
+            .containsExactly("member1", "member2")
 
         fetch.forEach {
             println(objectMapper.writeValueAsString(it))
@@ -300,13 +307,13 @@ class QuerydslBasicTest {
         em.persist(Member("teamB"))
 
         val fetch = jpaQueryFactory.select(member)
-                .from(member, team)
-                .where(member.username.eq(team.name))
-                .fetch()
+            .from(member, team)
+            .where(member.username.eq(team.name))
+            .fetch()
 
         assertThat(fetch)
-                .extracting("username")
-                .containsExactly("teamA", "teamB")
+            .extracting("username")
+            .containsExactly("teamA", "teamB")
     }
 
     @Test
@@ -316,9 +323,9 @@ class QuerydslBasicTest {
         val team = QTeam.team
 
         val result = jpaQueryFactory.select(member, team)
-                .from(member)
-                .leftJoin(member.team, team).on(team.name.eq("teamA"))
-                .fetch()
+            .from(member)
+            .leftJoin(member.team, team).on(team.name.eq("teamA"))
+            .fetch()
     }
 
     @Test
@@ -328,9 +335,9 @@ class QuerydslBasicTest {
         val team = QTeam.team
 
         jpaQueryFactory.select(member, team)
-                .from(member)
-                .leftJoin(team).on(member.username.eq(team.name))
-                .fetch()
+            .from(member)
+            .leftJoin(team).on(member.username.eq(team.name))
+            .fetch()
     }
 
     @PersistenceUnit
@@ -346,8 +353,8 @@ class QuerydslBasicTest {
         em.clear()
 
         val result = jpaQueryFactory.selectFrom(member)
-                .where(member.username.eq("member1"))
-                .fetchOne()
+            .where(member.username.eq("member1"))
+            .fetchOne()
 
         val loaded: Boolean = emf.persistenceUnitUtil.isLoaded(result?.team)
         assertThat(loaded).`as`("패치 조인 미적용").isFalse()
@@ -363,9 +370,9 @@ class QuerydslBasicTest {
         em.clear()
 
         val fetchOne = jpaQueryFactory.selectFrom(member)
-                .join(member.team, team).fetchJoin()
-                .where(member.username.eq("member1"))
-                .fetchOne()
+            .join(member.team, team).fetchJoin()
+            .where(member.username.eq("member1"))
+            .fetchOne()
 
         val loaded: Boolean = emf.persistenceUnitUtil.isLoaded(fetchOne?.team)
         assertThat(loaded).`as`("패치 조인 적용").isTrue()
@@ -379,12 +386,14 @@ class QuerydslBasicTest {
         val memberSub = QMember("memberSub")
 
         val fetchOne = jpaQueryFactory.selectFrom(member)
-                .where(member.age.eq(
-                        JPAExpressions
-                                .select(memberSub.age.max())
-                                .from(memberSub)
-                ))
-                .fetchOne()
+            .where(
+                member.age.eq(
+                    JPAExpressions
+                        .select(memberSub.age.max())
+                        .from(memberSub)
+                )
+            )
+            .fetchOne()
 
         assertThat(fetchOne?.age).isEqualTo(40)
 
@@ -398,13 +407,13 @@ class QuerydslBasicTest {
         val memberSub = QMember("memberSub")
 
         val fetch = jpaQueryFactory.selectFrom(member)
-                .where(
-                        member.age.goe(
-                                JPAExpressions.select(memberSub.age.avg())
-                                        .from(memberSub)
-                        )
+            .where(
+                member.age.goe(
+                    JPAExpressions.select(memberSub.age.avg())
+                        .from(memberSub)
                 )
-                .fetch()
+            )
+            .fetch()
 
         assertThat(fetch).extracting("age").containsExactly(30, 40)
     }
@@ -417,16 +426,16 @@ class QuerydslBasicTest {
         val memberSub = QMember("memberSub")
 
         val fetch = jpaQueryFactory
-                .selectFrom(member)
-                .where(
-                        member.age.`in`(
-                                JPAExpressions
-                                        .select(memberSub.age)
-                                        .from(memberSub)
-                                        .where(memberSub.age.gt(10))
-                        )
+            .selectFrom(member)
+            .where(
+                member.age.`in`(
+                    JPAExpressions
+                        .select(memberSub.age)
+                        .from(memberSub)
+                        .where(memberSub.age.gt(10))
                 )
-                .fetch()
+            )
+            .fetch()
 
         assertThat(fetch).extracting("age").containsExactly(20, 30, 40)
     }
@@ -439,20 +448,24 @@ class QuerydslBasicTest {
         val memberSub = QMember("memberSub")
 
         val fetch = jpaQueryFactory
-                .select(
-                        member.username,
-                        JPAExpressions
-                                .select(memberSub.age.max())
-                                .from(memberSub)
-                )
-                .from(member)
-                .fetch()
+            .select(
+                member.username,
+                JPAExpressions
+                    .select(memberSub.age.max())
+                    .from(memberSub)
+            )
+            .from(member)
+            .fetch()
 
         for (tuple in fetch) {
             println(tuple.get(member.username))
-            println(tuple.get(JPAExpressions
-                    .select(memberSub.age.max())
-                    .from(memberSub)))
+            println(
+                tuple.get(
+                    JPAExpressions
+                        .select(memberSub.age.max())
+                        .from(memberSub)
+                )
+            )
         }
     }
 
@@ -462,9 +475,9 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val fetch = jpaQueryFactory
-                .select(Expressions.constant("A"), member)
-                .from(member)
-                .fetch()
+            .select(Expressions.constant("A"), member)
+            .from(member)
+            .fetch()
 
         for (tuple in fetch) {
             println(tuple.get(Expressions.constant("A")))
@@ -478,8 +491,8 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val fetchOne = jpaQueryFactory.select(member.username.concat("_").concat(member.age.stringValue()))
-                .from(member)
-                .fetchFirst()
+            .from(member)
+            .fetchFirst()
     }
 
     @Test
@@ -488,8 +501,8 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val resultString: MutableList<String> = jpaQueryFactory.select(member.username)
-                .from(member)
-                .fetch()
+            .from(member)
+            .fetch()
 
         for (s in resultString) {
             println(s)
@@ -502,8 +515,8 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val resultTuple: Tuple = jpaQueryFactory.select(member.username, member.age)
-                .from(member)
-                .fetchFirst()
+            .from(member)
+            .fetchFirst()
 
         val member_username = resultTuple.get(member.username)
         val member_age = resultTuple.get(member.age)
@@ -516,10 +529,10 @@ class QuerydslBasicTest {
     @Test
     fun findDtoByJPQL() {
         val resultList = em.createQuery(
-                "select new study.querydsl.dto.MemberDto(m.username, m.age) from Member m",
-                MemberDto::class.java
+            "select new study.querydsl.dto.MemberDto(m.username, m.age) from Member m",
+            MemberDto::class.java
         )
-                .resultList
+            .resultList
 
         for (memberDto in resultList) {
             println(memberDto)
@@ -531,11 +544,15 @@ class QuerydslBasicTest {
         val jpaQueryFactory = JPAQueryFactory(em)
         val member = QMember.member
 
-        val result = jpaQueryFactory.select(Projections.bean(MemberDto::class.java,
+        val result = jpaQueryFactory.select(
+            Projections.bean(
+                MemberDto::class.java,
                 member.username,
-                member.age))
-                .from(member)
-                .fetch()
+                member.age
+            )
+        )
+            .from(member)
+            .fetch()
 
         for (memberDto in result) {
             println(memberDto)
@@ -548,11 +565,15 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val result = jpaQueryFactory
-                .select(Projections.fields(MemberDto::class.java,
-                        member.username,
-                        member.age))
-                .from(member)
-                .fetch()
+            .select(
+                Projections.fields(
+                    MemberDto::class.java,
+                    member.username,
+                    member.age
+                )
+            )
+            .from(member)
+            .fetch()
 
         for (memberDto in result) {
             println(memberDto)
@@ -565,11 +586,15 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val result = jpaQueryFactory
-                .select(Projections.constructor(MemberDto::class.java,
-                        member.username,
-                        member.age))
-                .from(member)
-                .fetch()
+            .select(
+                Projections.constructor(
+                    MemberDto::class.java,
+                    member.username,
+                    member.age
+                )
+            )
+            .from(member)
+            .fetch()
 
         for (memberDto in result) {
             println(memberDto)
@@ -583,20 +608,20 @@ class QuerydslBasicTest {
         val memberSub = QMember("memberSub")
 
         val result = jpaQueryFactory
-                .select(
-                        Projections.fields(
-                                UserDto::class.java,
-                                member.username.`as`("name"),
-                                ExpressionUtils.`as`(
-                                        JPAExpressions
-                                                .select(memberSub.age.avg().intValue())
-                                                .from(memberSub),
-                                        "age"
-                                )
-                        )
+            .select(
+                Projections.fields(
+                    UserDto::class.java,
+                    member.username.`as`("name"),
+                    ExpressionUtils.`as`(
+                        JPAExpressions
+                            .select(memberSub.age.avg().intValue())
+                            .from(memberSub),
+                        "age"
+                    )
                 )
-                .from(member)
-                .fetch()
+            )
+            .from(member)
+            .fetch()
 
         for (userDto in result) {
             println(userDto)
@@ -609,9 +634,9 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val result = jpaQueryFactory
-                .select(QMemberSubDto(member.username, member.age))
-                .from(member)
-                .fetch()
+            .select(QMemberSubDto(member.username, member.age))
+            .from(member)
+            .fetch()
 
         for (memberSubDto in result) {
             println(memberSubDto)
@@ -624,9 +649,9 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         val result = jpaQueryFactory
-                .select(member.username).distinct()
-                .from(member)
-                .fetch()
+            .select(member.username).distinct()
+            .from(member)
+            .fetch()
 
         for (username in result) {
             println(username)
@@ -659,9 +684,9 @@ class QuerydslBasicTest {
         }
 
         return jpaQueryFactory
-                .selectFrom(member)
-                .where(builder)
-                .fetch()
+            .selectFrom(member)
+            .where(builder)
+            .fetch()
     }
 
     @Test
@@ -691,10 +716,10 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         return jpaQueryFactory
-                .select(member)
-                .from(member)
-                .where(allEq(usernameParam, ageParam))
-                .fetch()
+            .select(member)
+            .from(member)
+            .where(allEq(usernameParam, ageParam))
+            .fetch()
     }
 
     private fun allEq(usernameParam: String?, ageParam: Int?): BooleanExpression? {
@@ -709,10 +734,10 @@ class QuerydslBasicTest {
         val member = QMember.member
 
         return jpaQueryFactory
-                .select(member)
-                .from(member)
-                .where(usernameEq(usernameParam), ageEq(ageParam))
-                .fetch()
+            .select(member)
+            .from(member)
+            .where(usernameEq(usernameParam), ageEq(ageParam))
+            .fetch()
     }
 
     private fun ageEq(ageParam: Int?): BooleanExpression? {
@@ -730,5 +755,97 @@ class QuerydslBasicTest {
         if (usernameParam == null) return null
 
         return member.username.eq(usernameParam)
+    }
+
+    @Test
+    fun bulkUpdate() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val selectQuery = jpaQueryFactory
+            .selectFrom(member)
+            .fetch()
+
+        println("-----------------------------")
+        println("-- select before update")
+        println("-----------------------------")
+        selectQuery.forEach { println(it) }
+
+        val updateQuery = jpaQueryFactory
+            .update(member)
+            .set(member.username, "비회원")
+            .where(member.age.lt(28))
+            .execute()
+
+        val selectQueryAfter = jpaQueryFactory
+            .selectFrom(member)
+            .fetch()
+
+        println("-----------------------------")
+        println("-- select after")
+        println("-----------------------------")
+        selectQueryAfter.forEach { println(it) }
+
+        em.clear()
+
+        val selectQueryAfterEmClear = jpaQueryFactory
+            .selectFrom(member)
+            .fetch()
+
+        println("-----------------------------")
+        println("-- select after entitymanager clear")
+        println("-----------------------------")
+        selectQueryAfterEmClear.forEach { println(it) }
+    }
+
+    @Test
+    fun bulkAdd() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val count = jpaQueryFactory
+            .update(member)
+            .set(member.age, member.age.add(1))
+            .execute()
+
+        em.flush()
+        em.clear()
+
+        val findAll = memberRepository.findAll()
+        findAll.forEach { println(it) }
+    }
+
+    @Test
+    fun bulkMinus() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val count = jpaQueryFactory
+            .update(member)
+            .set(member.age, member.age.add(-1))
+            .execute()
+
+        em.flush()
+        em.clear()
+
+        val findAll = memberRepository.findAll()
+        findAll.forEach { println(it) }
+    }
+
+    @Test
+    fun bulkDelete() {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+
+        val count = jpaQueryFactory
+            .delete(member)
+            .where(member.age.lt(18))
+            .execute()
+
+        em.flush()
+        em.clear()
+
+        val findAll = memberRepository.findAll()
+        findAll.forEach { println(it) }
     }
 }

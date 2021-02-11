@@ -20,4 +20,9 @@ class Team {
     constructor(name: String?) {
         this.name = name
     }
+
+    override fun toString(): String {
+        return "Team(id=$id, name=$name)"
+    }
+
 }
