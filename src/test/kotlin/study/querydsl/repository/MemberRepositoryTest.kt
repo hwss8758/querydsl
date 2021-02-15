@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
 import study.querydsl.dto.MemberSearchCondition
 import study.querydsl.entity.Member
@@ -52,7 +53,8 @@ class MemberRepositoryTest {
 
     @Test
     fun memberCustomTest() {
-        val memberSearchCondition = MemberSearchCondition("member2", "teamA", 15, 35)
+        val memberSearchCondition =
+                MemberSearchCondition("member2", "teamA", 15, 35)
         val searchByWhere = memberRepository.search(memberSearchCondition)
 
         println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
@@ -63,6 +65,66 @@ class MemberRepositoryTest {
             println(memberTeamDto.teamId)
             println(memberTeamDto.teamName)
         }
+        println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    }
+
+    @Test
+    fun searchPageSimpleTest() {
+        val memberSearchCondition =
+                MemberSearchCondition("member2", "teamA", 15, 35)
+        val searchByWhere =
+                memberRepository.searchPageSimple(memberSearchCondition, PageRequest.of(0, 1))
+
+        println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        for (memberTeamDto in searchByWhere) {
+            println(memberTeamDto.memberId)
+            println(memberTeamDto.username)
+            println(memberTeamDto.age)
+            println(memberTeamDto.teamId)
+            println(memberTeamDto.teamName)
+        }
+        println(searchByWhere.totalPages)
+        println(searchByWhere.size)
+        println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    }
+
+    @Test
+    fun searchPageComplexTest() {
+        val memberSearchCondition =
+                MemberSearchCondition("member2", "teamA", 15, 35)
+        val searchByWhere =
+                memberRepository.searchPageComplex(memberSearchCondition, PageRequest.of(0, 1))
+
+        println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        for (memberTeamDto in searchByWhere) {
+            println(memberTeamDto.memberId)
+            println(memberTeamDto.username)
+            println(memberTeamDto.age)
+            println(memberTeamDto.teamId)
+            println(memberTeamDto.teamName)
+        }
+        println(searchByWhere.totalPages)
+        println(searchByWhere.size)
+        println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    }
+
+    @Test
+    fun searchPageComplexTest2() {
+        val memberSearchCondition =
+                MemberSearchCondition("member2", "teamA", 15, 35)
+        val searchByWhere =
+                memberRepository.searchPageComplex2(memberSearchCondition, PageRequest.of(0, 1))
+
+        println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        for (memberTeamDto in searchByWhere) {
+            println(memberTeamDto.memberId)
+            println(memberTeamDto.username)
+            println(memberTeamDto.age)
+            println(memberTeamDto.teamId)
+            println(memberTeamDto.teamName)
+        }
+        println(searchByWhere.totalPages)
+        println(searchByWhere.size)
         println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     }
 }

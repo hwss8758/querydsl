@@ -3,6 +3,10 @@ package study.querydsl.repository.custom
 import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
+import org.springframework.data.support.PageableExecutionUtils
 import org.springframework.util.StringUtils
 import study.querydsl.dto.MemberSearchCondition
 import study.querydsl.dto.MemberTeamDto
@@ -36,6 +40,102 @@ class MemberRepositoryImpl : MemberRepositoryCustom {
                 .where(searchCondition(condition))
                 .fetch()
 
+    }
+
+    override fun searchPageSimple(condition: MemberSearchCondition?, pageable: Pageable): Page<MemberTeamDto> {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+        val team = QTeam.team
+
+        val results = jpaQueryFactory
+                .select(
+                        QMemberTeamDto(
+                                member.id.`as`("memberId"),
+                                member.username,
+                                member.age,
+                                team.id.`as`("teamId"),
+                                team.name
+                        )
+                )
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(searchCondition(condition))
+                .offset(pageable.offset)
+                .limit(pageable.pageSize.toLong())
+                .fetchResults() // 내용과 전체 카운트를 한번에 조회할 수 있다.
+
+        val content: MutableList<MemberTeamDto> = results.results
+        val total = results.total
+
+        return PageImpl(content, pageable, total)
+    }
+
+    override fun searchPageComplex(condition: MemberSearchCondition?, pageable: Pageable): Page<MemberTeamDto> {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+        val team = QTeam.team
+
+        val content: MutableList<MemberTeamDto> = jpaQueryFactory
+                .select(
+                        QMemberTeamDto(
+                                member.id.`as`("memberId"),
+                                member.username,
+                                member.age,
+                                team.id.`as`("teamId"),
+                                team.name
+                        )
+                )
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(searchCondition(condition))
+                .offset(pageable.offset)
+                .limit(pageable.pageSize.toLong())
+                .fetch()
+
+        val total: Long = jpaQueryFactory
+                .select(member)
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(searchCondition(condition))
+                .offset(pageable.offset)
+                .limit(pageable.pageSize.toLong())
+                .fetchCount()
+
+        return PageImpl(content, pageable, total)
+    }
+
+    override fun searchPageComplex2(condition: MemberSearchCondition?,
+                                    pageable: Pageable): Page<MemberTeamDto> {
+        val jpaQueryFactory = JPAQueryFactory(em)
+        val member = QMember.member
+        val team = QTeam.team
+
+        val content: MutableList<MemberTeamDto> = jpaQueryFactory
+                .select(
+                        QMemberTeamDto(
+                                member.id.`as`("memberId"),
+                                member.username,
+                                member.age,
+                                team.id.`as`("teamId"),
+                                team.name
+                        )
+                )
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(searchCondition(condition))
+                .offset(pageable.offset)
+                .limit(pageable.pageSize.toLong())
+                .fetch()
+
+        val countQuery = jpaQueryFactory
+                .select(member)
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(searchCondition(condition))
+                .offset(pageable.offset)
+                .limit(pageable.pageSize.toLong())
+
+        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchCount)
     }
 
     private fun searchCondition(condition: MemberSearchCondition?): BooleanExpression? {
